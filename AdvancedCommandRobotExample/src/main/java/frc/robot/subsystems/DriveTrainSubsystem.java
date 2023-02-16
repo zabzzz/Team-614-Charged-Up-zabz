@@ -5,14 +5,29 @@
 package frc.robot.subsystems;
 
 import frc.robot.Constants;
+import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
+
 public class DriveTrainSubsystem extends SubsystemBase {
   /** Creates a new DriveTrainSubsystem. */
+
+  // PID Controllers and values for Drive Train PID
+  ProfiledPIDController leftProfiledPIDController = 
+    new ProfiledPIDController(Constants.V_kP, Constants.V_kI, Constants.V_kD,
+      new Constraints(Constants.DRIVETRAIN_CONSTRAINT_VELOCITY, Constants.DRIVETRAIN_CONSTRAINT_ACCELERATION));
+  ProfiledPIDController rightProfiledPIDController = 
+    new ProfiledPIDController(Constants.V_kP, Constants.V_kI, Constants.V_kD,
+      new Constraints(Constants.DRIVETRAIN_CONSTRAINT_VELOCITY, Constants.DRIVETRAIN_CONSTRAINT_ACCELERATION));
+  double leftPIDVal;
+  double rightPIDVal;
+  double leftVal;
+  double rightVal;
 
   // Create Drivetrain Motor Variables
 
@@ -43,16 +58,32 @@ public class DriveTrainSubsystem extends SubsystemBase {
     frontLeftMotor.follow(backLeftMotor,false);
 
     // Current Limits Set
-    frontRightMotor.setSmartCurrentLimit(Constants.MOTOR_CURRENT_LIMIT);
-    backRightMotor.setSmartCurrentLimit(Constants.MOTOR_CURRENT_LIMIT);
-    frontLeftMotor.setSmartCurrentLimit(Constants.MOTOR_CURRENT_LIMIT);
-    backLeftMotor.setSmartCurrentLimit(Constants.MOTOR_CURRENT_LIMIT);
+    frontRightMotor.setSmartCurrentLimit(Constants.MOTOR_CURRENT_LIMIT); // current limit can be changed from
+    backRightMotor.setSmartCurrentLimit(Constants.MOTOR_CURRENT_LIMIT); //  40 to a higher value (max 90)
+    frontLeftMotor.setSmartCurrentLimit(Constants.MOTOR_CURRENT_LIMIT); // only momentarily though, just to
+    backLeftMotor.setSmartCurrentLimit(Constants.MOTOR_CURRENT_LIMIT);  // accelerate though, just a note.
+
     // Create DifferentialDrive Object 
     differentialDrive = new DifferentialDrive(backLeftMotor, backRightMotor);
   }
 
   public void arcadeDrive(double moveSpeed, double rotateSpeed) {
-    differentialDrive.arcadeDrive(moveSpeed, rotateSpeed);
+    leftPIDVal = moveSpeed;
+    rightPIDVal = moveSpeed;
+
+    if (rotateSpeed > 0)  {
+      rightPIDVal = rightPIDVal - rotateSpeed;
+      leftPIDVal = leftPIDVal + rotateSpeed;
+    }
+    if (rotateSpeed < 0)  {
+      rightPIDVal = rightPIDVal + rotateSpeed;
+      leftPIDVal = leftPIDVal - rotateSpeed;
+    }
+    rightVal = rightProfiledPIDController.calculate(backRightMotor.get(), rightPIDVal);
+    leftVal = leftProfiledPIDController.calculate(backLeftMotor.get(), leftPIDVal);
+    
+    backRightMotor.set(rightVal);
+    backLeftMotor.set(leftVal);
   }
   
   @Override

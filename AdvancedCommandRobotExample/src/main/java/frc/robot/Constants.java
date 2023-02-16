@@ -89,6 +89,10 @@ public final class Constants {
   public static final double V_kI = 0;
   public static final double V_kD = 0;
 
+  // Drive-Train Constraint Values
+  public static final double DRIVETRAIN_CONSTRAINT_ACCELERATION = 10;
+  public static final double DRIVETRAIN_CONSTRAINT_VELOCITY = 10;
+
   // Timer Based Auto Variables
   public static final double RUN_INITAL_AUTO = 2.0;
   public static final double AUTO_STAGE_2 = 7.0;
